@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "SynologyAgendaWidget-v4-1.zip.b64"
+      - "SynologyAgendaWidget-v4-1.zip"
       - ".github/workflows/build-apk.yml"
 
 jobs:
@@ -16,17 +16,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Instalar Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Recuperar proyecto v4
+      - name: Descomprimir proyecto v4-1
         run: |
-          rm -rf build-project SynologyAgendaWidget-v4-1.zip
-          base64 -d SynologyAgendaWidget-v4-1.zip.b64 > SynologyAgendaWidget-v4-1.zip
+          rm -rf build-project
           mkdir build-project
           unzip -q SynologyAgendaWidget-v4-1.zip -d build-project
+          echo "Contenido del proyecto:"
+          find build-project -maxdepth 3 -type f | sort
 
       - name: Localizar proyecto Android
         run: |
@@ -37,6 +38,7 @@ jobs:
           fi
           PROJECT_DIR=$(dirname "$SETTINGS")
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "Proyecto: $PROJECT_DIR"
 
       - name: Preparar firma permanente
         env:
@@ -46,12 +48,19 @@ jobs:
             echo "ERROR: falta el secret AGENDA_SIGNING"
             exit 1
           fi
-          echo "$AGENDA_SIGNING" | jq -r '.keystore' | base64 -d > "$RUNNER_TEMP/agenda-signing.jks"
-          PASSWORD=$(echo "$AGENDA_SIGNING" | jq -r '.password')
-          if [ -z "$PASSWORD" ] || [ "$PASSWORD" = "null" ]; then
+
+          KEYSTORE_B64=$(printf '%s' "$AGENDA_SIGNING" | jq -r '.keystore')
+          PASSWORD=$(printf '%s' "$AGENDA_SIGNING" | jq -r '.password')
+          ALIAS=$(printf '%s' "$AGENDA_SIGNING" | jq -r '.alias')
+
+          if [ -z "$KEYSTORE_B64" ] || [ "$KEYSTORE_B64" = "null" ] ||              [ -z "$PASSWORD" ] || [ "$PASSWORD" = "null" ] ||              [ "$ALIAS" != "agenda" ]; then
             echo "ERROR: secret AGENDA_SIGNING no válido"
             exit 1
           fi
+
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/agenda-signing.jks"
+          keytool -list -keystore "$RUNNER_TEMP/agenda-signing.jks" -storepass "$PASSWORD" -alias agenda >/dev/null
+
           echo "AGENDA_KEYSTORE_PATH=$RUNNER_TEMP/agenda-signing.jks" >> "$GITHUB_ENV"
           echo "AGENDA_KEYSTORE_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
           echo "::add-mask::$PASSWORD"
@@ -66,16 +75,22 @@ jobs:
           cd "$PROJECT_DIR"
           gradle assembleRelease --stacktrace
 
-      - name: Verificar APK y firma
+      - name: Verificar APK
         run: |
           APK=$(find "$PROJECT_DIR" -type f -name "*release*.apk" | head -1)
           if [ -z "$APK" ]; then
             echo "ERROR: No se generó ningún APK release"
             exit 1
           fi
+
           mkdir -p apk
           cp "$APK" apk/AgendaSynology.apk
-          keytool -list -keystore "$AGENDA_KEYSTORE_PATH" -storepass "$AGENDA_KEYSTORE_PASSWORD" -alias agenda | grep -E "SHA256|Owner|Valid" || true
+
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner 2>/dev/null | sort -V | tail -1)
+          if [ -n "$APKSIGNER" ]; then
+            "$APKSIGNER" verify --verbose --print-certs apk/AgendaSynology.apk
+          fi
+
           sha256sum apk/AgendaSynology.apk
           ls -lh apk/AgendaSynology.apk
 
