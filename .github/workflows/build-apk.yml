@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "SynologyAgendaWidget-v3.zip"
+      - "SynologyAgendaWidget-v4-1.zip.b64"
       - ".github/workflows/build-apk.yml"
 
 jobs:
@@ -21,13 +21,12 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Descomprimir proyecto
+      - name: Recuperar proyecto v4
         run: |
-          rm -rf build-project
+          rm -rf build-project SynologyAgendaWidget-v4-1.zip
+          base64 -d SynologyAgendaWidget-v4-1.zip.b64 > SynologyAgendaWidget-v4-1.zip
           mkdir build-project
-          unzip -q SynologyAgendaWidget-v3.zip -d build-project
-          echo "Contenido:"
-          find build-project -maxdepth 3 -type f
+          unzip -q SynologyAgendaWidget-v4-1.zip -d build-project
 
       - name: Localizar proyecto Android
         run: |
@@ -38,32 +37,51 @@ jobs:
           fi
           PROJECT_DIR=$(dirname "$SETTINGS")
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-          echo "Proyecto encontrado en: $PROJECT_DIR"
+
+      - name: Preparar firma permanente
+        env:
+          AGENDA_SIGNING: ${{ secrets.AGENDA_SIGNING }}
+        run: |
+          if [ -z "$AGENDA_SIGNING" ]; then
+            echo "ERROR: falta el secret AGENDA_SIGNING"
+            exit 1
+          fi
+          echo "$AGENDA_SIGNING" | jq -r '.keystore' | base64 -d > "$RUNNER_TEMP/agenda-signing.jks"
+          PASSWORD=$(echo "$AGENDA_SIGNING" | jq -r '.password')
+          if [ -z "$PASSWORD" ] || [ "$PASSWORD" = "null" ]; then
+            echo "ERROR: secret AGENDA_SIGNING no válido"
+            exit 1
+          fi
+          echo "AGENDA_KEYSTORE_PATH=$RUNNER_TEMP/agenda-signing.jks" >> "$GITHUB_ENV"
+          echo "AGENDA_KEYSTORE_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
+          echo "::add-mask::$PASSWORD"
 
       - name: Instalar Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.13"
 
-      - name: Compilar APK
+      - name: Compilar APK release firmada
         run: |
           cd "$PROJECT_DIR"
-          gradle assembleDebug --stacktrace
+          gradle assembleRelease --stacktrace
 
-      - name: Localizar APK
+      - name: Verificar APK y firma
         run: |
-          APK=$(find "$PROJECT_DIR" -type f -name "*debug*.apk" | head -1)
+          APK=$(find "$PROJECT_DIR" -type f -name "*release*.apk" | head -1)
           if [ -z "$APK" ]; then
-            echo "ERROR: No se generó ningún APK"
+            echo "ERROR: No se generó ningún APK release"
             exit 1
           fi
           mkdir -p apk
           cp "$APK" apk/AgendaSynology.apk
+          keytool -list -keystore "$AGENDA_KEYSTORE_PATH" -storepass "$AGENDA_KEYSTORE_PASSWORD" -alias agenda | grep -E "SHA256|Owner|Valid" || true
+          sha256sum apk/AgendaSynology.apk
           ls -lh apk/AgendaSynology.apk
 
       - name: Guardar APK
         uses: actions/upload-artifact@v4
         with:
-          name: AgendaSynology-APK
+          name: AgendaSynology-v4-APK
           path: apk/AgendaSynology.apk
           retention-days: 30
