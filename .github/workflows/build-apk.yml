@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "SynologyAgendaWidget-v5-0-JSONFIX.zip"
+      - "SynologyAgendaWidget-v5-1-PLUS.zip"
       - ".github/workflows/build-apk.yml"
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Descomprimir proyecto v5.0 JSONFIX
+      - name: Descomprimir proyecto v5.1 PLUS
         run: |
           rm -rf build-project
           mkdir build-project
