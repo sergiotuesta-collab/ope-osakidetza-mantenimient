@@ -25,7 +25,7 @@ jobs:
         run: |
           rm -rf build-project
           mkdir build-project
-          unzip -q SynologyAgendaWidget-v5-0-JSONFIX.zip -d build-project
+          unzip -q SynologyAgendaWidget-v5-1-PLUS.zip -d build-project
           echo "Contenido del proyecto:"
           find build-project -maxdepth 3 -type f | sort
 
