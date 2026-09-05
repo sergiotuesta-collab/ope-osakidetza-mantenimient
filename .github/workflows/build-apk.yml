@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "SynologyAgendaWidget-v5-4-ATTACH-FIX.zip"
+      - "SynologyAgendaWidget-v5-5-NAS-FILES.zip"
       - ".github/workflows/build-apk.yml"
 
 jobs:
@@ -21,11 +21,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Descomprimir proyecto v5.4 ATTACH FIX
+      - name: Descomprimir proyecto v5.5 NAS FILES
         run: |
           rm -rf build-project
           mkdir build-project
-          unzip -q SynologyAgendaWidget-v5-4-ATTACH-FIX.zip -d build-project
+          unzip -q SynologyAgendaWidget-v5-5-NAS-FILES.zip -d build-project
           echo "Contenido del proyecto:"
           find build-project -maxdepth 3 -type f | sort
 
@@ -97,6 +97,6 @@ jobs:
       - name: Guardar APK
         uses: actions/upload-artifact@v4
         with:
-          name: AgendaSynology-v5.4-ATTACH-FIX-APK
+          name: AgendaSynology-v5.5-NAS-FILES-APK
           path: apk/AgendaSynology.apk
-          retention-days: 30
+          retention-days:
