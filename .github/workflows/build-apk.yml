@@ -97,6 +97,6 @@ jobs:
       - name: Guardar APK
         uses: actions/upload-artifact@v4
         with:
-          name: AgendaSynology-v5.0-JSONFIX-APK
+          name: AgendaSynology-v5.1-PLUS-APK
           path: apk/AgendaSynology.apk
           retention-days: 30
