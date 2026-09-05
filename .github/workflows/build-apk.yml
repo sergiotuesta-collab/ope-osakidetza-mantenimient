@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "SynologyAgendaWidget-v5-1-PLUS.zip"
+      - "SynologyAgendaWidget-v5-3-IMAGES-CONTACTOS.zip"
       - ".github/workflows/build-apk.yml"
 
 jobs:
@@ -21,11 +21,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Descomprimir proyecto v5.1 PLUS
+      - name: Descomprimir proyecto v5.3 IMAGES + CONTACTOS
         run: |
           rm -rf build-project
           mkdir build-project
-          unzip -q SynologyAgendaWidget-v5-1-PLUS.zip -d build-project
+          unzip -q SynologyAgendaWidget-v5-3-IMAGES-CONTACTOS.zip -d build-project
           echo "Contenido del proyecto:"
           find build-project -maxdepth 3 -type f | sort
 
@@ -97,6 +97,6 @@ jobs:
       - name: Guardar APK
         uses: actions/upload-artifact@v4
         with:
-          name: AgendaSynology-v5.1-PLUS-APK
+          name: AgendaSynology-v5.3-IMAGES-CONTACTOS-APK
           path: apk/AgendaSynology.apk
           retention-days: 30
