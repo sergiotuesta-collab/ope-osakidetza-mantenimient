@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "SynologyAgendaWidget-v5-8-CALENDAR-DIRECT.zip"
+      - "SynologyAgendaWidget-v5-9-MAILPLUS-CALENDAR.zip"
       - ".github/workflows/build-apk.yml"
 
 jobs:
@@ -21,11 +21,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Descomprimir proyecto v5.8 CALENDAR DIRECT
+      - name: Descomprimir proyecto v5.9 MAILPLUS CALENDAR
         run: |
           rm -rf build-project
           mkdir build-project
-          unzip -q SynologyAgendaWidget-v5-8-CALENDAR-DIRECT.zip -d build-project
+          unzip -q SynologyAgendaWidget-v5-9-MAILPLUS-CALENDAR.zip -d build-project
           echo "Contenido del proyecto:"
           find build-project -maxdepth 3 -type f | sort
 
@@ -120,6 +120,6 @@ jobs:
       - name: Guardar APK
         uses: actions/upload-artifact@v4
         with:
-          name: AgendaSynology-v5.8-CALENDAR-DIRECT-APK
+          name: AgendaSynology-v5.9-MAILPLUS-CALENDAR-APK
           path: apk/AgendaSynology.apk
           retention-days: 30
