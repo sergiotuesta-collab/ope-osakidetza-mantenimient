@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "SynologyAgendaWidget-v5-7-MAIL-DELETE.zip"
+      - "SynologyAgendaWidget-v5-8-CALENDAR-DIRECT.zip"
       - ".github/workflows/build-apk.yml"
 
 jobs:
@@ -21,17 +21,17 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Descomprimir proyecto v5.7 MAIL DELETE
+      - name: Descomprimir proyecto v5.8 CALENDAR DIRECT
         run: |
           rm -rf build-project
           mkdir build-project
-          unzip -q SynologyAgendaWidget-v5-7-MAIL-DELETE.zip -d build-project
+          unzip -q SynologyAgendaWidget-v5-8-CALENDAR-DIRECT.zip -d build-project
           echo "Contenido del proyecto:"
           find build-project -maxdepth 3 -type f | sort
 
       - name: Localizar proyecto Android
         run: |
-          SETTINGS=$(find build-project -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" \) | head -1)
+          SETTINGS=$(find build-project -type f -name "settings.gradle" -o -name "settings.gradle.kts" | head -1)
           if [ -z "$SETTINGS" ]; then
             echo "ERROR: No se encontró settings.gradle"
             exit 1
@@ -53,13 +53,18 @@ jobs:
           PASSWORD=$(printf '%s' "$AGENDA_SIGNING" | jq -r '.password')
           ALIAS=$(printf '%s' "$AGENDA_SIGNING" | jq -r '.alias')
 
-          if [ -z "$KEYSTORE_B64" ] || [ "$KEYSTORE_B64" = "null" ] ||              [ -z "$PASSWORD" ] || [ "$PASSWORD" = "null" ] ||              [ "$ALIAS" != "agenda" ]; then
+          if [ -z "$KEYSTORE_B64" ] || [ "$KEYSTORE_B64" = "null" ] || \
+             [ -z "$PASSWORD" ] || [ "$PASSWORD" = "null" ] || \
+             [ "$ALIAS" != "agenda" ]; then
             echo "ERROR: secret AGENDA_SIGNING no válido"
             exit 1
           fi
 
           printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/agenda-signing.jks"
-          keytool -list -keystore "$RUNNER_TEMP/agenda-signing.jks" -storepass "$PASSWORD" -alias agenda >/dev/null
+          keytool -list \
+            -keystore "$RUNNER_TEMP/agenda-signing.jks" \
+            -storepass "$PASSWORD" \
+            -alias agenda >/dev/null
 
           echo "AGENDA_KEYSTORE_PATH=$RUNNER_TEMP/agenda-signing.jks" >> "$GITHUB_ENV"
           echo "AGENDA_KEYSTORE_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
@@ -78,25 +83,11 @@ jobs:
       - name: Verificar APK
         run: |
           APK=$(find "$PROJECT_DIR" -type f -name "*release*.apk" | head -1)
+
           if [ -z "$APK" ]; then
             echo "ERROR: No se generó ningún APK release"
             exit 1
           fi
 
           mkdir -p apk
-          cp "$APK" apk/AgendaSynology.apk
-
-          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner 2>/dev/null | sort -V | tail -1)
-          if [ -n "$APKSIGNER" ]; then
-            "$APKSIGNER" verify --verbose --print-certs apk/AgendaSynology.apk
-          fi
-
-          sha256sum apk/AgendaSynology.apk
-          ls -lh apk/AgendaSynology.apk
-
-      - name: Guardar APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: AgendaSynology-v5.7-MAIL-DELETE-APK
-          path: apk/AgendaSynology.apk
-          retention-days: 30
+          cp "$APK" apk/AgendaSynology
