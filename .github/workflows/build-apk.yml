@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "SynologyAgendaWidget-v6-0-2-UI-POLISH.zip"
+      - "SynologyAgendaWidget-v6-0-3-TODAY-UX.zip"
       - ".github/workflows/build-apk.yml"
 
 jobs:
@@ -21,11 +21,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Descomprimir proyecto v6.0.2 UI POLISH
+      - name: Descomprimir proyecto v6.0.3 TODAY UX
         run: |
           rm -rf build-project
           mkdir build-project
-          unzip -q SynologyAgendaWidget-v6-0-2-UI-POLISH.zip -d build-project
+          unzip -q SynologyAgendaWidget-v6-0-3-TODAY-UX.zip -d build-project
           echo "Contenido del proyecto:"
           find build-project -maxdepth 3 -type f | sort
 
@@ -53,7 +53,9 @@ jobs:
           PASSWORD=$(printf '%s' "$AGENDA_SIGNING" | jq -r '.password')
           ALIAS=$(printf '%s' "$AGENDA_SIGNING" | jq -r '.alias')
 
-          if [ -z "$KEYSTORE_B64" ] || [ "$KEYSTORE_B64" = "null" ] ||              [ -z "$PASSWORD" ] || [ "$PASSWORD" = "null" ] ||              [ "$ALIAS" != "agenda" ]; then
+          if [ -z "$KEYSTORE_B64" ] || [ "$KEYSTORE_B64" = "null" ] || \
+             [ -z "$PASSWORD" ] || [ "$PASSWORD" = "null" ] || \
+             [ "$ALIAS" != "agenda" ]; then
             echo "ERROR: secret AGENDA_SIGNING no válido"
             exit 1
           fi
@@ -97,6 +99,6 @@ jobs:
       - name: Guardar APK
         uses: actions/upload-artifact@v4
         with:
-          name: AgendaSynology-v6.0.2-UI-POLISH-APK
+          name: AgendaSynology-v6.0.3-TODAY-UX-APK
           path: apk/AgendaSynology.apk
           retention-days: 30
