@@ -100,22 +100,3 @@ jobs:
           name: AgendaSynology-v5.8-IMAGE-VIEW-DOWNLOAD-APK
           path: apk/AgendaSynology.apk
           retention-days: 30
-
-          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner 2>/dev/null | sort -V | tail -1)
-
-          if [ -n "$APKSIGNER" ]; then
-            "$APKSIGNER" verify --verbose --print-certs apk/AgendaSynology.apk
-          fi
-
-          echo "SHA256:"
-          sha256sum apk/AgendaSynology.apk
-
-          echo "Tamaño:"
-          ls -lh apk/AgendaSynology.apk
-
-      - name: Guardar APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: AgendaSynology-v5.9-MAILPLUS-CALENDAR-APK
-          path: apk/AgendaSynology.apk
-          retention-days: 30
