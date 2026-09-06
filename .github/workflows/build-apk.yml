@@ -31,14 +31,17 @@ jobs:
 
       - name: Localizar proyecto Android
         run: |
-          SETTINGS=$(find build-project -type f -name "settings.gradle" -o -name "settings.gradle.kts" | head -1)
+          SETTINGS=$(find build-project -type f -name "settings.gradle" | head -1)
+
           if [ -z "$SETTINGS" ]; then
             echo "ERROR: No se encontró settings.gradle"
             exit 1
           fi
+
           PROJECT_DIR=$(dirname "$SETTINGS")
+
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-          echo "Proyecto: $PROJECT_DIR"
+          echo "Proyecto Android localizado en: $PROJECT_DIR"
 
       - name: Preparar firma permanente
         env:
@@ -53,14 +56,23 @@ jobs:
           PASSWORD=$(printf '%s' "$AGENDA_SIGNING" | jq -r '.password')
           ALIAS=$(printf '%s' "$AGENDA_SIGNING" | jq -r '.alias')
 
-          if [ -z "$KEYSTORE_B64" ] || [ "$KEYSTORE_B64" = "null" ] || \
-             [ -z "$PASSWORD" ] || [ "$PASSWORD" = "null" ] || \
-             [ "$ALIAS" != "agenda" ]; then
-            echo "ERROR: secret AGENDA_SIGNING no válido"
+          if [ -z "$KEYSTORE_B64" ] || [ "$KEYSTORE_B64" = "null" ]; then
+            echo "ERROR: keystore no válido"
+            exit 1
+          fi
+
+          if [ -z "$PASSWORD" ] || [ "$PASSWORD" = "null" ]; then
+            echo "ERROR: password no válido"
+            exit 1
+          fi
+
+          if [ "$ALIAS" != "agenda" ]; then
+            echo "ERROR: alias incorrecto"
             exit 1
           fi
 
           printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/agenda-signing.jks"
+
           keytool -list \
             -keystore "$RUNNER_TEMP/agenda-signing.jks" \
             -storepass "$PASSWORD" \
@@ -68,6 +80,7 @@ jobs:
 
           echo "AGENDA_KEYSTORE_PATH=$RUNNER_TEMP/agenda-signing.jks" >> "$GITHUB_ENV"
           echo "AGENDA_KEYSTORE_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
+
           echo "::add-mask::$PASSWORD"
 
       - name: Instalar Gradle
@@ -90,4 +103,23 @@ jobs:
           fi
 
           mkdir -p apk
-          cp "$APK" apk/AgendaSynology
+          cp "$APK" apk/AgendaSynology.apk
+
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner 2>/dev/null | sort -V | tail -1)
+
+          if [ -n "$APKSIGNER" ]; then
+            "$APKSIGNER" verify --verbose --print-certs apk/AgendaSynology.apk
+          fi
+
+          echo "SHA256:"
+          sha256sum apk/AgendaSynology.apk
+
+          echo "Tamaño:"
+          ls -lh apk/AgendaSynology.apk
+
+      - name: Guardar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AgendaSynology-v5.8-CALENDAR-DIRECT-APK
+          path: apk/AgendaSynology.apk
+          retention-days: 30
