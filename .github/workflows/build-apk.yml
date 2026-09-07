@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "SynologyAgendaWidget-v6-1-1-CREAR-SYNOLOGY.zip"
+      - "SynologyAgendaWidget-v6-1-3-CREAR-EVENTO-PRO.zip"
       - ".github/workflows/build-apk.yml"
 
 jobs:
@@ -21,11 +21,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Descomprimir proyecto v6.1.1 CREAR SYNOLOGY
+      - name: Descomprimir proyecto v6.1.3 CREAR EVENTO PRO
         run: |
           rm -rf build-project
           mkdir build-project
-          unzip -q SynologyAgendaWidget-v6-1-1-CREAR-SYNOLOGY.zip -d build-project
+          unzip -q SynologyAgendaWidget-v6-1-3-CREAR-EVENTO-PRO.zip -d build-project
           echo "Contenido del proyecto:"
           find build-project -maxdepth 3 -type f | sort
 
@@ -99,6 +99,6 @@ jobs:
       - name: Guardar APK
         uses: actions/upload-artifact@v4
         with:
-          name: AgendaSynology-v6.1.1-CREAR-SYNOLOGY-APK
+          name: AgendaSynology-v6.1.3-CREAR-EVENTO-PRO-APK
           path: apk/AgendaSynology.apk
           retention-days: 30
