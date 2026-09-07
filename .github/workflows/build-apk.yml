@@ -39,7 +39,6 @@ jobs:
           PROJECT_DIR=$(dirname "$SETTINGS")
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           echo "Proyecto: $PROJECT_DIR"
-
       - name: Preparar firma permanente
         env:
           AGENDA_SIGNING: ${{ secrets.AGENDA_SIGNING }}
